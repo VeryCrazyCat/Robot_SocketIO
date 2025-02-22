@@ -8,3 +8,8 @@ beautifulsoup4==4.13.3
 python-rapidjson
 gunicorn
 python-dotenv
+numpy
+opencv-python
+imutils
+pillow
+mediapipe
