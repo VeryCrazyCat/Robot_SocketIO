@@ -14,7 +14,7 @@ def generate():
         }
         yield f"data: {json.dumps(data)}\n\n"
 
-        time.sleep(0.05)  # Adjust sleep for update frequency
+        time.sleep(0.005)  # Adjust sleep for update frequency
 
 def emit(signal):
     
