@@ -12,6 +12,12 @@ function toggleLED() {
     // 1 -> LED toggle
 }
 
+function sendSignal(signal) {
+  socket.emit("nodemcu_action", {"action": signal})
+  // 1 -> LED toggle
+}
+
+
 function changeStatusDisplay(msg) {
     const stateDisplay = document.querySelector(".status-display")
     stateDisplay.innerHTML = msg

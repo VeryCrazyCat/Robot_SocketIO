@@ -12,6 +12,14 @@
     <button class="test-led" onclick="toggleLED()">Test LED</button>
     <p class="status-display"></p>
 
+    <p>__________</p>
+
+    <button class="motor-1-on" onclick="sendSignal(11)">Turn on Motor 1</button>
+    <button class="motor-1-off" onclick="sendSignal(10)">Turn off Motor 1</button>
+
+    <button class="motor-2-on" onclick="sendSignal(21)">Turn on Motor 2</button>
+    <button class="motor-2-off" onclick="sendSignal(20)">Turn off Motor 2</button>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="/api/static/js/index.js"></script>
