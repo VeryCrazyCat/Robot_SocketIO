@@ -4,6 +4,10 @@ $(document).ready(function(){
   socket.on('socket_to_client', function(msg) {
       console.log(msg.data)
   });
+  socket.on('annotated_image_output', function(msg) {
+    let img = document.querySelector(".photo-output")
+    img.src = `data:image/png;base64,${msg["data"]}`;
+});
 })
 
 function emitSocket() {
@@ -32,7 +36,7 @@ if (navigator.mediaDevices.getUserMedia) {
     console.log(errormsg)
   })
 
-  const inputFPS = 1;
+  const inputFPS = 10;
   setInterval(() => {
     const width = video.videoWidth; // Use videoWidth for actual dimensions
     const height = video.videoHeight;
@@ -49,3 +53,5 @@ if (navigator.mediaDevices.getUserMedia) {
     socket.emit('socket_to_image_processor', data);
   }, 1000/inputFPS)
 }
+
+
