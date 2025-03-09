@@ -7,7 +7,11 @@ $(document).ready(function(){
   socket.on('annotated_image_output', function(msg) {
     let img = document.querySelector(".photo-output")
     img.src = `data:image/png;base64,${msg["data"]}`;
-});
+  });
+  socket.on('image_data_return', function(msg) {
+    let p = document.querySelector(".data-return")
+    p.innerHTML = msg["data"]
+  });
 })
 
 function emitSocket() {
@@ -20,14 +24,28 @@ var context = canvas.getContext('2d');
 
 
 let video = document.querySelector(".video_input")
-video.width = 400
-video.height = 300
+video.width = 640
+video.height = 360
 
 let photo = document.querySelector(".photo")
 
 
 if (navigator.mediaDevices.getUserMedia) {
-  navigator.mediaDevices.getUserMedia({video: true})
+  navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: "environment"
+    },
+    width: {
+      min: 640,
+      ideal: 640,
+      max: 720
+    },
+    height: {
+      min: 360,
+      ideal: 360,
+      max: 480
+    }
+  })
   .then(function (stream) {
     video.srcObject = stream;
     video.play;
@@ -36,7 +54,7 @@ if (navigator.mediaDevices.getUserMedia) {
     console.log(errormsg)
   })
 
-  const inputFPS = 10;
+  const inputFPS = 2;
   setInterval(() => {
     const width = video.videoWidth; // Use videoWidth for actual dimensions
     const height = video.videoHeight;

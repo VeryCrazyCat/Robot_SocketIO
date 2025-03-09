@@ -9,10 +9,14 @@ import numpy as np
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from imageio import imread
 import os
 
 from inference import get_model
 import supervision as sv
+
+from api.routes.emitter import calc_rotation
+from api.routes.emitter import stop_robot
 
 # model_dir = os.path.abspath("efficientdet_lite0.tflite")
 # BaseOptions = mp.tasks.BaseOptions
@@ -26,9 +30,13 @@ import supervision as sv
 #     running_mode=VisionRunningMode.LIVE_STREAM,
 #     max_results=5,
 # )
-
-model = get_model(model_id="solidwaste-detection/7", api_key="zNbnK1VDFdmzJG12zJxY")
-
+frames_detected = 0
+stop = 0
+model = get_model(model_id="plastic-recyclable-detection/2", api_key="zNbnK1VDFdmzJG12zJxY")
+#solidwaste-detection/7
+#waste-detection-ctmyy/9
+#trash-2.0/1
+#waste-beverage-bottles/4
 def on_connect(data_image):
     # print("received image from client: " + data_image)
     # emit("socket_to_client", {"data": "hello from the server"})
@@ -38,20 +46,41 @@ def on_connect(data_image):
     #     print(detection_result)
     image = readb64(data_image)
     results = model.infer(image)[0]
-    detections = sv.Detections.from_inference(results)
 
-    # create supervision annotators
-    bounding_box_annotator = sv.BoxAnnotator()
-    label_annotator = sv.LabelAnnotator()
+    
+    global frames_detected
+    global stop
+    confidence = 0.6
+    predicted = False
+    center_x, center_y = 0,0
+    for obj in list(results.predictions):
 
-    # annotate the image with our inference results
-    annotated_image = bounding_box_annotator.annotate(
-        scene=image, detections=detections)
-    annotated_image = label_annotator.annotate(
-        scene=annotated_image, detections=detections)
+        if obj.confidence > confidence:
+            confidence = obj.confidence
+        
+            center_x = int(obj.x)
+            center_y = int(obj.y)
+            predicted = True
+
+    if predicted:
+        cv2.circle(image, (center_x, center_y), 10, (255,255,0), 5)
+        print(center_x)
+        stop = 0
+        frames_detected += 1
+        if frames_detected >= 1:
+            calc_rotation(center_x)
+            frames_detected = 0
+    else:
+        stop += 1
+        if stop >= 5:
+            stop_robot()
+            stop = 0
+            
     
     buffer = io.BytesIO()
-    annotated_image.save(buffer, format='JPEG', quality=75)
+
+    #Converts NP array to image, saves it to io buffer
+    Image.fromarray(image).save(buffer, format='JPEG', quality=75)
     encodedString = base64.b64encode(buffer.getbuffer())
     # display the image
     #sv.plot_image(annotated_image)
@@ -68,6 +97,7 @@ def readb64(base64_string):
 
     sbuf.write(base64.b64decode(base64_string, ' /'))
     pimg = Image.open(sbuf)
-    return pimg
+    #return pimg
+
     #return pimg as cv2 array needed for mediapipe
-    #return cv2.cvtColor(np.array(pimg), cv2.COLOR_RGB2BGR)
+    return cv2.cvtColor(np.array(pimg), cv2.COLOR_RGB2BGR)

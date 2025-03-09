@@ -5,6 +5,10 @@ $(document).ready(function(){
     console.log(msg)
       changeStatusDisplay(msg.data)
   });
+  socket.on('annotated_image_output', function(msg) {
+    let img = document.querySelector(".photo-output")
+    img.src = `data:image/png;base64,${msg["data"]}`;
+  });
 })
 
 function toggleLED() {

@@ -5,7 +5,7 @@ import api.routes.emitter as emitter
 import ast
 def on_connect(data):
     print("received from client")
-    emitter.emit(data["action"])
+    emitter.robot_emit(data["action"])
     emit("socket_to_client", {"data": "hello from the server"})
 
 def emit_nodemcu_status(msg):
