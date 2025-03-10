@@ -24,8 +24,8 @@ var context = canvas.getContext('2d');
 
 
 let video = document.querySelector(".video_input")
-video.width = 640
-video.height = 360
+video.width = 1080
+video.height = 1920
 
 let photo = document.querySelector(".photo")
 
@@ -36,19 +36,19 @@ if (navigator.mediaDevices.getUserMedia) {
       facingMode: "environment"
     },
     width: {
-      min: 640,
-      ideal: 640,
-      max: 720
+      min: 1080,
+      ideal: 1080,
+      max: 1080
     },
     height: {
-      min: 360,
-      ideal: 360,
-      max: 480
+      min: 1920,
+      ideal: 1920,
+      max: 1920
     }
   })
   .then(function (stream) {
     video.srcObject = stream;
-    video.play;
+    video.play();
   })
   .catch(function (errormsg) {
     console.log(errormsg)
@@ -65,7 +65,7 @@ if (navigator.mediaDevices.getUserMedia) {
 
     context.drawImage(video, 0, 0, width, height);
 
-    var data = canvas.toDataURL('image/jpeg', 0.5);
+    var data = canvas.toDataURL('image/jpeg', 1.0);
     photo.src = data;
     context.clearRect(0, 0, width, height);
     socket.emit('socket_to_image_processor', data);

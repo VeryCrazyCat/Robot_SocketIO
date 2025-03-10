@@ -1,3 +1,5 @@
+
+
 from flask_socketio import SocketIO, emit, send, join_room, leave_room, rooms
 import flask, uuid
 from flask import session, request
@@ -23,7 +25,7 @@ from api.routes.emitter import stop_robot
 
 frames_detected = 0
 stop = 0
-model = YOLO("model.pt")
+model = YOLO("yolo11m.pt")
 #solidwaste-detection/7
 #waste-detection-ctmyy/9
 #trash-2.0/1
@@ -34,21 +36,35 @@ def predict(data):
     results = model(data)
     
     for result in results:
-        boxes = result.boxes
         
-        confs = boxes.conf.cpu().numpy()
-        if confs:
-            max_index = confs.argmax()
+        confs = result.boxes.conf.cpu().numpy()
+        if confs.size == 0:
+            return -9999,-9999
 
-            #x, y, x, y format
-            box = boxes.xyxy[max_index][0].cpu().numpy()
+        names = [result.names[cls.item()] for cls in result.boxes.cls.int()]
+        result_boxes = result.boxes
+        max_index = confs.argmax()
 
-            # Calculate the center coordinates
-            _center_x = (box[0] + box[2]) / 2
-            _center_y = (box[1] + box[3]) / 2
-            return _center_x, _center_y
-    else:
-        return -9999,-9999
+        #x, y, x, y format
+        boxes = result_boxes.xywh.cpu().numpy()
+        i = 0
+
+        min_conf = 0
+        center_x = 0
+        center_y = 0
+        for box in boxes:
+            confidence = confs[i]
+            if confidence > min_conf and names[i] == "bottle":
+                min_conf = confidence
+                center_x = int(box[0])
+                center_y = int(box[1])
+            
+            
+            i += 1
+        # Calculate the center coordinates
+        
+        return center_x, center_y
+    
 
 
 
