@@ -11,6 +11,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from imageio import imread
 import os
+from torchvision import transforms
+import torch
+from ultralytics import YOLO
 
 from inference import get_model
 import supervision as sv
@@ -18,52 +21,47 @@ import supervision as sv
 from api.routes.emitter import calc_rotation
 from api.routes.emitter import stop_robot
 
-# model_dir = os.path.abspath("efficientdet_lite0.tflite")
-# BaseOptions = mp.tasks.BaseOptions
-# ObjectDetector = mp.tasks.vision.ObjectDetector
-# ObjectDetectorOptions = mp.tasks.vision.ObjectDetectorOptions
-# VisionRunningMode = mp.tasks.vision.RunningMode
-
-
-# options = ObjectDetectorOptions(
-#     base_options=BaseOptions(model_asset_path='/path/to/model.tflite'),
-#     running_mode=VisionRunningMode.LIVE_STREAM,
-#     max_results=5,
-# )
 frames_detected = 0
 stop = 0
-model = get_model(model_id="plastic-recyclable-detection/2", api_key="zNbnK1VDFdmzJG12zJxY")
+model = YOLO("model.pt")
 #solidwaste-detection/7
 #waste-detection-ctmyy/9
 #trash-2.0/1
 #waste-beverage-bottles/4
-def on_connect(data_image):
-    # print("received image from client: " + data_image)
-    # emit("socket_to_client", {"data": "hello from the server"})
-    # with ObjectDetector.create_from_options(options) as detector:
-    #     image = mp.Image.create_from_file(readb64(data_image))
-    #     detection_result = detector.detect(image)
-    #     print(detection_result)
-    image = readb64(data_image)
-    results = model.infer(image)[0]
 
+
+def predict(data):
+    results = model(data)
+    
+    for result in results:
+        boxes = result.boxes
+        
+        confs = boxes.conf.cpu().numpy()
+        if confs:
+            max_index = confs.argmax()
+
+            #x, y, x, y format
+            box = boxes.xyxy[max_index][0].cpu().numpy()
+
+            # Calculate the center coordinates
+            _center_x = (box[0] + box[2]) / 2
+            _center_y = (box[1] + box[3]) / 2
+            return _center_x, _center_y
+    else:
+        return -9999,-9999
+
+
+
+def on_connect(data_image):
+
+    image = readb64(data_image)
+    center_x, center_y = predict(image)
     
     global frames_detected
     global stop
-    confidence = 0.6
-    predicted = False
-    center_x, center_y = 0,0
-    for obj in list(results.predictions):
 
-        if obj.confidence > confidence:
-            confidence = obj.confidence
-        
-            center_x = int(obj.x)
-            center_y = int(obj.y)
-            predicted = True
-
-    if predicted:
-        cv2.circle(image, (center_x, center_y), 10, (255,255,0), 5)
+    if (center_x != -9999):
+        cv2.circle(image, (center_x, center_y), 5, (255,255,0), 5)
         print(center_x)
         stop = 0
         frames_detected += 1
