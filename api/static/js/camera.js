@@ -25,7 +25,7 @@ var context = canvas.getContext('2d');
 
 let video = document.querySelector(".video_input")
 video.width = 1080
-video.height = 1920
+video.height = 360
 
 let photo = document.querySelector(".photo")
 
@@ -33,17 +33,9 @@ let photo = document.querySelector(".photo")
 if (navigator.mediaDevices.getUserMedia) {
   navigator.mediaDevices.getUserMedia({
     video: {
-      facingMode: "environment"
-    },
-    width: {
-      min: 1080,
-      ideal: 1080,
-      max: 1080
-    },
-    height: {
-      min: 1920,
-      ideal: 1920,
-      max: 1920
+      facingMode: "environment",
+      width: {ideal: 1440},
+      height: {ideal: 360}
     }
   })
   .then(function (stream) {

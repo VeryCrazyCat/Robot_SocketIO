@@ -1,5 +1,3 @@
-
-
 from flask_socketio import SocketIO, emit, send, join_room, leave_room, rooms
 import flask, uuid
 from flask import session, request
@@ -13,71 +11,42 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from imageio import imread
 import os
-from torchvision import transforms
-import torch
-from ultralytics import YOLO
 
 from inference import get_model
 import supervision as sv
 
 from api.routes.emitter import calc_rotation
 from api.routes.emitter import stop_robot
-
+import time
 frames_detected = 0
 stop = 0
-model = YOLO("yolo11m.pt")
+model = get_model(model_id="plastic-recyclable-detection/2", api_key="zNbnK1VDFdmzJG12zJxY")
 #solidwaste-detection/7
 #waste-detection-ctmyy/9
 #trash-2.0/1
 #waste-beverage-bottles/4
-
-
-def predict(data):
-    results = model(data)
-    
-    for result in results:
-        
-        confs = result.boxes.conf.cpu().numpy()
-        if confs.size == 0:
-            return -9999,-9999
-
-        names = [result.names[cls.item()] for cls in result.boxes.cls.int()]
-        result_boxes = result.boxes
-        max_index = confs.argmax()
-
-        #x, y, x, y format
-        boxes = result_boxes.xywh.cpu().numpy()
-        i = 0
-
-        min_conf = 0
-        center_x = 0
-        center_y = 0
-        for box in boxes:
-            confidence = confs[i]
-            if confidence > min_conf and names[i] == "bottle":
-                min_conf = confidence
-                center_x = int(box[0])
-                center_y = int(box[1])
-            
-            
-            i += 1
-        # Calculate the center coordinates
-        
-        return center_x, center_y
-    
-
-
-
 def on_connect(data_image):
-
+    time_now = time.time()
     image = readb64(data_image)
-    center_x, center_y = predict(image)
+    segments = split_image(image, 3, 3)
+    results = model.infer(image)[0]
     
     global frames_detected
     global stop
+    confidence = 0.6
+    predicted = False
+    center_x, center_y = 0,0
+    for obj in list(results.predictions):
 
-    if (center_x != -9999):
-        cv2.circle(image, (center_x, center_y), 5, (255,255,0), 5)
+        if obj.confidence > confidence:
+            confidence = obj.confidence
+        
+            center_x = int(obj.x)
+            center_y = int(obj.y)
+            predicted = True
+
+    if predicted:
+        cv2.circle(image, (center_x, center_y), 10, (255,255,0), 5)
         print(center_x)
         stop = 0
         frames_detected += 1
@@ -113,5 +82,26 @@ def readb64(base64_string):
     pimg = Image.open(sbuf)
     #return pimg
 
-    #return pimg as cv2 array needed for mediapipe
-    return cv2.cvtColor(np.array(pimg), cv2.COLOR_RGB2BGR)
+    array = np.array(pimg)
+    return array
+
+def split_image(image, rows, cols):
+    height, width = image.shape[:2] #first two elements are width and height
+    part_height = height // rows
+    part_width = width // cols
+    parts = [
+        [
+            [] for x in range(3)
+        ] for y in range(3)
+    ]
+
+    for r in range(rows):
+        for c in range(cols):
+            y_start = r * part_height
+            y_end = (r + 1) * part_height
+
+            x_start = c * part_width
+            x_end = (c + 1) * part_width
+
+            part = image[y_start:y_end, x_start:x_end]
+            parts[c][r] = part

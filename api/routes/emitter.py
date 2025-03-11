@@ -4,8 +4,10 @@ from flask_socketio import SocketIO, emit, send, join_room, leave_room, rooms
 from queue import Queue
 
 emit_queue = Queue()
+
 def generate():
     while True:
+        
         actions = []
         while not emit_queue.empty():
             actions.append(emit_queue.get())
@@ -16,6 +18,7 @@ def generate():
         yield f"data: {json.dumps(data)}\n\n"
 
         time.sleep(0.005)  # Adjust sleep for update frequency
+        
 
 def robot_emit(signal):
     
@@ -23,15 +26,15 @@ def robot_emit(signal):
     print(f"{str(signal)} queued!")
 
 def calc_rotation(x):
-    if x < 290:
+    if x < 680:
         direction = "right"
-    if x > 350:
+    if x > 760:
         direction = "left"
-    elif 290 <= x <= 350:
+    elif 680 <= x <= 760:
         direction = "forward"
     signal = ""
     if direction == "left" or direction == "right":
-        amplitude = int(abs(320 - x)/7) #abs allows both left and right rotation
+        amplitude = int(abs(720 - x)/10) #abs allows both left and right rotation
         if amplitude < 0:
             amplitude = 0 #Motor deactivates lower than 30, allows leeway
         
